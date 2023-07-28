@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MQTT Data Sender</title>
+</head>
+<body>
+    <h1>MQTT Data Sender</h1>
+    <button id="onBtn">Send On</button>
+    <button id="offBtn">Send Off</button>
+
+    <script>
+        // Function to send data to the MQTT broker
+        function sendData(status) {
+            fetch('/send-data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: status }),
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log(`Data sent successfully: ${status}`);
+                } else {
+                    console.error(`Failed to send data: ${status}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending data:', error);
+            });
+        }
+
+        // Event listeners for the buttons
+        document.getElementById('onBtn').addEventListener('click', () => {
+            sendData('on');
+        });
+
+        document.getElementById('offBtn').addEventListener('click', () => {
+            sendData('off');
+        });
+    </script>
+</body>
+</html>
