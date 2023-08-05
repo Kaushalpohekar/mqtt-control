@@ -28,15 +28,32 @@ type="text/javascript"
         </a>
       </div>
     </nav>
+   
+    <div class="container mt-5 d-flex justify-content-end align-items-end" >
+      <div class="row">
+        <!-- <div class="card" style="width: 18rem;">
+          <div class="card-header justify-content-center">
+            Status
+          </div>
+          <button type="button" class="btn btn-success">ON</button>
+        </div> -->
+        <div class="card text-center">
+          <div class="card-header">
+           Status
+          </div>
+          <div class="card-body">
+            <a href="#" class="btn btn-success" id="statusOn">Device is on </a>
+            <a href="#" class="btn btn-warning" id="statusOff" >Device is off </a>
+          </div>
+         
+        </div>
+      </div>
+    </div>
 
-    <div
-      class="container d-flex justify-content-center align-items-center"
-      style="height: 80vh"
-    >
-      <div
-        class="card"
-        style="background-color: #f3dcdc; height: 120px; width: 400px"
-      >
+    <div class="container d-flex justify-content-center align-items-center"
+      style="height: 40vh" >
+      <div class="card"
+        style="background-color: #f3dcdc; height: 120px; width: 400px" >
         <div class="card-body">
           <h2 class="d-flex justify-content-center">AHU Controlling System</h2>
           <div class="d-flex justify-content-around">
@@ -46,50 +63,91 @@ type="text/javascript"
         </div>
       </div>
     </div>
-    <footer
-      class="bg-light text-center text-lg-start"
-      style="position: fixed; bottom: 0; width: 100%"
-    >
-      <!-- Copyright -->
+    <footer class="bg-light text-center text-lg-start"
+      style="position: fixed; bottom: 0; width: 100%" >
+    
       <div class="text-center p-3 text-light" style="background-color: #4350af">
         Powered by
         <a class="text-dark" href="https://senselive.in"
           ><u class="text-light">@Senslive Technologies</u>
         </a>
       </div>
-      <!-- Copyright -->
+
     </footer>
 
     <script>
+      // Function to update the status buttons' visibility
+      function updateStatusButtons(deviceStatus) {
+        const statusOnBtn = document.getElementById("statusOn");
+        const statusOffBtn = document.getElementById("statusOff");
+  
+        if (deviceStatus === "on") {
+          statusOnBtn.style.display = "inline-block";
+          statusOffBtn.style.display = "none";
+        } else if (deviceStatus === "off") {
+          statusOnBtn.style.display = "none";
+          statusOffBtn.style.display = "inline-block";
+        }
+      } 
+  
       // Function to send "on" or "off" status to the MQTT broker
       function sendData(status) {
-        fetch("/send-data", {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain",
-          },
-          body: status,
-        })
-          .then((response) => {
-            if (response.ok) {
-              console.log(`Status "${status}" sent successfully.`);
+        fetch("/get-current-status") // Replace with your API endpoint to get the current device status
+          .then(response => response.text())
+          .then(currentStatus => {
+            if ((status === "on" && currentStatus === "on") || (status === "off" && currentStatus === "off")) {
+              // Display alert for already being in the desired state
+              showAlert(`Device is already ${status}.`);
             } else {
-              console.error(`Failed to send status "${status}".`);
+              // Update status and send command
+              fetch("/send-data", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "text/plain",
+                },
+                body: status,
+              })
+              .then(response => {
+                if (response.ok) {
+                  console.log(`Status "${status}" sent successfully.`);
+                  updateStatusButtons(status);
+                } else {
+                  console.error(`Failed to send status "${status}".`);
+                }
+              })
+              .catch(error => {
+                console.error("Error sending data:", error);
+              });
             }
           })
-          .catch((error) => {
-            console.error("Error sending data:", error);
+          .catch(error => {
+            console.error("Error fetching current status:", error);
           });
       }
-
+  
+      // Function to show an alert on the page
+      function showAlert(message) {
+        const alertDiv = document.createElement("div");
+        alertDiv.className = "alert alert-info";
+        alertDiv.textContent = message;
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+          document.body.removeChild(alertDiv);
+        }, 3000); // Remove the alert after 3 seconds
+      }
+  
       // Event listeners for the buttons
       document.getElementById("onBtn").addEventListener("click", () => {
         sendData("on");
       });
-
+  
       document.getElementById("offBtn").addEventListener("click", () => {
         sendData("off");
       });
+  
+      // Initial status update on page load (you can replace with actual status)
+      updateStatusButtons("off");
     </script>
   </body>
 </html>
